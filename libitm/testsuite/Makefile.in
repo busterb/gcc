@@ -234,6 +234,7 @@ _RUNTEST = $(shell if test -f $(top_srcdir)/../dejagnu/runtest; then \
 	     echo $(top_srcdir)/../dejagnu/runtest; else echo runtest; fi)
 
 RUNTEST = "$(_RUNTEST) $(AM_RUNTESTFLAGS)"
+EXTRA_DEJAGNU_SITE_CONFIG = extra.exp
 all: all-am
 
 .SUFFIXES:
@@ -439,6 +440,10 @@ uninstall-am:
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	uninstall uninstall-am
 
+
+extra.exp:
+	echo 'set BUILD_CC "$(CC)"' > $@.tmp
+	mv $@.tmp $@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
