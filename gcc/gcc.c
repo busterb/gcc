@@ -873,7 +873,7 @@ proper position among the other output files.  */
 #endif
 
 #ifdef ENABLE_DEFAULT_PIE
-#define NO_PIE_SPEC		"no-pie|static"
+#define NO_PIE_SPEC		"no-pie"
 #define PIE_SPEC		NO_PIE_SPEC "|r|shared:;"
 #define NO_FPIE1_SPEC		"fno-pie"
 #define FPIE1_SPEC		NO_FPIE1_SPEC ":;"
@@ -919,7 +919,7 @@ proper position among the other output files.  */
 #ifndef LINK_PIE_SPEC
 #ifdef HAVE_LD_PIE
 #ifndef LD_PIE_SPEC
-#define LD_PIE_SPEC "-pie"
+#define LD_PIE_SPEC "-pie %{static:--no-dynamic-linker -Bsymbolic}"
 #endif
 #else
 #define LD_PIE_SPEC ""
