@@ -35,6 +35,9 @@ enum sh_function_kind {
   SFUNC_STATIC
 };
 
+#define TARGET_ATOMIC_HARD_CAS \
+  (selected_atomic_model ().type == sh_atomic_model::hard_cas)
+
 #ifdef RTX_CODE
 extern rtx sh_fsca_sf2int (void);
 extern rtx sh_fsca_int2sf (void);

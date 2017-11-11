@@ -65,6 +65,10 @@ m2e
 Target RejectNegative Condition(SUPPORT_SH2E)
 Generate SH2e code.
 
+mj2
+Target RejectNegative Mask(SHJ2) Condition(SUPPORT_SHJ2)
+Generate J2 code.
+
 m3
 Target RejectNegative Mask(SH3) Condition(SUPPORT_SH3)
 Generate SH3 code.

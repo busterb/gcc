@@ -83,6 +83,7 @@ extern int code_for_indirect_jump_scratch;
 #define SUPPORT_SH4_SINGLE 1
 #define SUPPORT_SH2A 1
 #define SUPPORT_SH2A_SINGLE 1
+#define SUPPORT_SHJ2 1
 #endif
 
 #define TARGET_DIVIDE_CALL_DIV1 (sh_div_strategy == SH_DIV_CALL_DIV1)
@@ -115,6 +116,7 @@ extern int code_for_indirect_jump_scratch;
 #define SELECT_SH4A_SINGLE_ONLY  (MASK_SH4A | SELECT_SH4_SINGLE_ONLY)
 #define SELECT_SH4A		 (MASK_SH4A | SELECT_SH4)
 #define SELECT_SH4A_SINGLE	 (MASK_SH4A | SELECT_SH4_SINGLE)
+#define SELECT_SHJ2		 (MASK_SHJ2 | SELECT_SH2)
 
 #if SUPPORT_SH1
 #define SUPPORT_SH2 1
@@ -122,6 +124,7 @@ extern int code_for_indirect_jump_scratch;
 #if SUPPORT_SH2
 #define SUPPORT_SH3 1
 #define SUPPORT_SH2A_NOFPU 1
+#define SUPPORT_SHJ2 1
 #endif
 #if SUPPORT_SH3
 #define SUPPORT_SH4_NOFPU 1
@@ -154,7 +157,7 @@ extern int code_for_indirect_jump_scratch;
 #define MASK_ARCH (MASK_SH1 | MASK_SH2 | MASK_SH3 | MASK_SH_E | MASK_SH4 \
 		   | MASK_HARD_SH2A | MASK_HARD_SH2A_DOUBLE | MASK_SH4A \
 		   | MASK_HARD_SH4 | MASK_FPU_SINGLE \
-		   | MASK_FPU_SINGLE_ONLY)
+		   | MASK_FPU_SINGLE_ONLY | MASK_SHJ2)
 
 /* This defaults us to big-endian.  */
 #ifndef TARGET_ENDIAN_DEFAULT
@@ -229,7 +232,8 @@ extern int code_for_indirect_jump_scratch;
 %{m2a-single:--isa=sh2a} \
 %{m2a-single-only:--isa=sh2a} \
 %{m2a-nofpu:--isa=sh2a-nofpu} \
-%{m4al:-dsp}"
+%{m4al:-dsp} \
+%{mj2:-isa=j2}"
 
 #define ASM_SPEC SH_ASM_SPEC
 
@@ -345,6 +349,7 @@ struct sh_atomic_model
     hard_llcs,
     soft_tcb,
     soft_imask,
+    hard_cas,
 
     num_models
   };
@@ -1568,7 +1573,7 @@ extern bool current_function_interrupt;
 
 /* Nonzero if the target supports dynamic shift instructions
    like shad and shld.  */
-#define TARGET_DYNSHIFT (TARGET_SH3 || TARGET_SH2A)
+#define TARGET_DYNSHIFT (TARGET_SH3 || TARGET_SH2A || TARGET_SHJ2)
 
 /* The cost of using the dynamic shift insns (shad, shld) are the same
    if they are available.  If they are not available a library function will
@@ -1833,6 +1838,7 @@ enum processor_type {
   PROCESSOR_SH2,
   PROCESSOR_SH2E,
   PROCESSOR_SH2A,
+  PROCESSOR_SHJ2,
   PROCESSOR_SH3,
   PROCESSOR_SH3E,
   PROCESSOR_SH4,

@@ -240,6 +240,9 @@
       || (TARGET_SH4A && <MODE>mode == SImode && !TARGET_ATOMIC_STRICT))
     atomic_insn = gen_atomic_compare_and_swap<mode>_hard (old_val, mem,
 							  exp_val, new_val);
+  else if (TARGET_ATOMIC_HARD_CAS && <MODE>mode == SImode)
+    atomic_insn = gen_atomic_compare_and_swap<mode>_cas (old_val, mem,
+							 exp_val, new_val);
   else if (TARGET_ATOMIC_SOFT_GUSA)
     atomic_insn = gen_atomic_compare_and_swap<mode>_soft_gusa (old_val, mem,
 		      exp_val, new_val);
@@ -305,6 +308,57 @@
     FAIL;
 }
   [(set_attr "length" "14")])
+
+(define_expand "atomic_compare_and_swapsi_cas"
+  [(set (match_operand:SI 0 "register_operand" "=r")
+	(unspec_volatile:SI
+	  [(match_operand:SI 1 "atomic_mem_operand_0" "=Sra")
+	   (match_operand:SI 2 "register_operand" "r")
+	   (match_operand:SI 3 "register_operand" "r")]
+	  UNSPECV_CMPXCHG_1))]
+  "TARGET_ATOMIC_HARD_CAS"
+{
+  rtx mem = gen_rtx_REG (SImode, 0);
+  emit_move_insn (mem, force_reg (SImode, XEXP (operands[1], 0)));
+  emit_insn (gen_shj2_cas (operands[0], mem, operands[2], operands[3]));
+  DONE;
+})
+
+(define_insn "shj2_cas"
+  [(set (match_operand:SI 0 "register_operand" "=&r")
+  (unspec_volatile:SI
+   [(match_operand:SI 1 "register_operand" "=r")
+   (match_operand:SI 2 "register_operand" "r")
+   (match_operand:SI 3 "register_operand" "0")]
+   UNSPECV_CMPXCHG_1))
+   (set (reg:SI T_REG)
+	(unspec_volatile:SI [(const_int 0)] UNSPECV_CMPXCHG_3))]
+  "TARGET_ATOMIC_HARD_CAS"
+  "cas.l	%2,%0,@%1"
+  [(set_attr "length" "2")]
+)
+
+(define_expand "atomic_compare_and_swapqi_cas"
+  [(set (match_operand:SI 0 "arith_reg_dest" "=&r")
+	(unspec_volatile:SI
+	  [(match_operand:SI 1 "atomic_mem_operand_0" "=Sra")
+	   (match_operand:SI 2 "arith_operand" "rI08")
+	   (match_operand:SI 3 "arith_operand" "rI08")]
+	  UNSPECV_CMPXCHG_1))]
+  "TARGET_ATOMIC_HARD_CAS"
+{FAIL;}
+)
+
+(define_expand "atomic_compare_and_swaphi_cas"
+  [(set (match_operand:SI 0 "arith_reg_dest" "=&r")
+	(unspec_volatile:SI
+	  [(match_operand:SI 1 "atomic_mem_operand_0" "=Sra")
+	   (match_operand:SI 2 "arith_operand" "rI08")
+	   (match_operand:SI 3 "arith_operand" "rI08")]
+	  UNSPECV_CMPXCHG_1))]
+  "TARGET_ATOMIC_HARD_CAS"
+{FAIL;}
+)
 
 ;; The QIHImode llcs patterns modify the address register of the memory
 ;; operand.  In order to express that, we have to open code the memory

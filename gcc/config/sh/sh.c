@@ -662,6 +662,7 @@ parse_validate_atomic_model_option (const char* str)
   model_names[sh_atomic_model::hard_llcs] = "hard-llcs";
   model_names[sh_atomic_model::soft_tcb] = "soft-tcb";
   model_names[sh_atomic_model::soft_imask] = "soft-imask";
+  model_names[sh_atomic_model::hard_cas] = "hard-cas";
 
   const char* model_cdef_names[sh_atomic_model::num_models];
   model_cdef_names[sh_atomic_model::none] = "NONE";
@@ -669,6 +670,7 @@ parse_validate_atomic_model_option (const char* str)
   model_cdef_names[sh_atomic_model::hard_llcs] = "HARD_LLCS";
   model_cdef_names[sh_atomic_model::soft_tcb] = "SOFT_TCB";
   model_cdef_names[sh_atomic_model::soft_imask] = "SOFT_IMASK";
+  model_cdef_names[sh_atomic_model::hard_cas] = "HARD_CAS";
 
   sh_atomic_model ret;
   ret.type = sh_atomic_model::none;
@@ -747,6 +749,9 @@ got_mode_name:;
   if (ret.type == sh_atomic_model::soft_imask && TARGET_USERMODE)
     err_ret ("cannot use atomic model %s in user mode", ret.name);
 
+  if (ret.type == sh_atomic_model::hard_cas && !TARGET_SHJ2)
+    err_ret ("atomic model %s is only available J2 targets", ret.name);
+
   return ret;
 
 #undef err_ret
@@ -803,6 +808,8 @@ sh_option_override (void)
     sh_cpu = PROCESSOR_SH2E;
   if (TARGET_SH2A)
     sh_cpu = PROCESSOR_SH2A;
+  if (TARGET_SHJ2)
+    sh_cpu = PROCESSOR_SHJ2;
   if (TARGET_SH3)
     sh_cpu = PROCESSOR_SH3;
   if (TARGET_SH3E)
