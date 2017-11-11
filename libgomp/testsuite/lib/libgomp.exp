@@ -85,6 +85,7 @@ proc libgomp_init { args } {
     global ALWAYS_CFLAGS
     global CFLAGS
     global TOOL_EXECUTABLE TOOL_OPTIONS
+    global BUILD_CC
     global GCC_UNDER_TEST
     global TESTING_IN_BUILD_TREE
     global target_triplet
@@ -107,6 +108,8 @@ proc libgomp_init { args } {
     if ![info exists GCC_UNDER_TEST] then {
 	if [info exists TOOL_EXECUTABLE] {
 	    set GCC_UNDER_TEST $TOOL_EXECUTABLE
+	} elseif [info exists BUILD_CC] {
+	    set GCC_UNDER_TEST $BUILD_CC
 	} else {
 	    set GCC_UNDER_TEST "[find_gcc]"
 	}

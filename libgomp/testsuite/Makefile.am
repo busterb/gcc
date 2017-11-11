@@ -12,6 +12,11 @@ _RUNTEST = $(shell if test -f $(top_srcdir)/../dejagnu/runtest; then \
 	     echo $(top_srcdir)/../dejagnu/runtest; else echo runtest; fi)
 RUNTEST = "$(_RUNTEST) $(AM_RUNTESTFLAGS)"
 
+EXTRA_DEJAGNU_SITE_CONFIG = extra.exp
+
+extra.exp:
+	echo 'set BUILD_CC "$(CC)"' > $@.tmp
+	mv $@.tmp $@
 
 # Instead of directly in ../testsuite/libgomp-test-support.exp.in, the
 # following variables have to be "routed through" this Makefile, for expansion
