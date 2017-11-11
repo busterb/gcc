@@ -2776,6 +2776,10 @@ target_libraries="target-libgcc \
 #
 target_tools="target-rda"
 
+# Don't build target tools and libraries for f32c
+# target_tools=""
+# target_libraries=""
+
 ################################################################################
 
 ## All tools belong in one of the four categories, and are assigned above

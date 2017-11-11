@@ -35,6 +35,7 @@
   74kf2_1
   74kf1_1
   74kf3_2
+  f32c
   loongson_2e
   loongson_2f
   loongson_3a
@@ -1166,6 +1167,7 @@
 (include "7000.md")
 (include "9000.md")
 (include "10000.md")
+(include "f32c.md")
 (include "loongson2ef.md")
 (include "loongson3a.md")
 (include "octeon.md")
@@ -1589,7 +1591,7 @@
   [(set (match_operand:GPR 0 "register_operand")
 	(mult:GPR (match_operand:GPR 1 "register_operand")
 		  (match_operand:GPR 2 "register_operand")))]
-  "ISA_HAS_<D>MULT || ISA_HAS_R6<D>MUL"
+  "(ISA_HAS_<D>MULT || ISA_HAS_R6<D>MUL) && !TARGET_SWMUL"
 {
   rtx lo;
 
@@ -1616,7 +1618,7 @@
   [(set (match_operand:GPR 0 "register_operand" "=d")
         (mult:GPR (match_operand:GPR 1 "register_operand" "d")
                   (match_operand:GPR 2 "register_operand" "d")))]
-  "TARGET_LOONGSON_2EF || TARGET_LOONGSON_3A || ISA_HAS_R6<D>MUL"
+  "(TARGET_LOONGSON_2EF || TARGET_LOONGSON_3A || ISA_HAS_R6<D>MUL) && !TARGET_SWMUL"
 {
   if (TARGET_LOONGSON_2EF)
     return "<d>multu.g\t%0,%1,%2";
@@ -1633,7 +1635,7 @@
 	(mult:GPR (match_operand:GPR 1 "register_operand" "d,d")
 		  (match_operand:GPR 2 "register_operand" "d,d")))
    (clobber (match_scratch:GPR 3 "=l,X"))]
-  "ISA_HAS_<D>MUL3"
+  "ISA_HAS_<D>MUL3 && !TARGET_SWMUL"
 {
   if (which_alternative == 1)
     return "<d>mult\t%1,%2";
@@ -1660,7 +1662,7 @@
         (clobber (scratch:SI))])
    (set (match_operand:SI 3 "d_operand")
 	(match_dup 0))]
-  "ISA_HAS_MUL3 && peep2_reg_dead_p (2, operands[0])"
+  "(ISA_HAS_MUL3 && peep2_reg_dead_p (2, operands[0])) && !TARGET_SWMUL"
   [(parallel
        [(set (match_dup 3)
 	     (mult:SI (match_dup 1)
@@ -1671,7 +1673,7 @@
   [(set (match_operand:GPR 0 "muldiv_target_operand" "=l")
 	(mult:GPR (match_operand:GPR 1 "register_operand" "d")
 		  (match_operand:GPR 2 "register_operand" "d")))]
-  "ISA_HAS_<D>MULT && !TARGET_FIX_R4000"
+  "ISA_HAS_<D>MULT && !TARGET_FIX_R4000 && !TARGET_SWMUL"
   "<d>mult\t%1,%2"
   [(set_attr "type" "imul")
    (set_attr "mode" "<MODE>")])
@@ -1681,7 +1683,7 @@
 	(mult:GPR (match_operand:GPR 1 "register_operand" "d")
 		  (match_operand:GPR 2 "register_operand" "d")))
    (clobber (match_scratch:GPR 3 "=l"))]
-  "ISA_HAS_<D>MULT && TARGET_FIX_R4000"
+  "(ISA_HAS_<D>MULT && TARGET_FIX_R4000) && !TARGET_SWMUL"
   "<d>mult\t%1,%2\;mflo\t%0"
   [(set_attr "type" "imul")
    (set_attr "mode" "<MODE>")
@@ -1701,7 +1703,7 @@
 		 (match_operand:SI 2 "d_operand")))
    (set (match_operand:SI 3 "d_operand")
 	(match_dup 0))]
-  "ISA_HAS_MACC && !ISA_HAS_MUL3"
+  "ISA_HAS_MACC && !ISA_HAS_MUL3 && !TARGET_SWMUL"
   [(set (match_dup 0)
 	(const_int 0))
    (parallel
@@ -1742,7 +1744,7 @@
 		 (match_operand:SI 3 "register_operand" "0,0,d")))
    (clobber (match_scratch:SI 4 "=X,X,l"))
    (clobber (match_scratch:SI 5 "=X,X,&d"))]
-  "GENERATE_MADD_MSUB && !TARGET_MIPS16"
+  "GENERATE_MADD_MSUB && !TARGET_MIPS16 && !TARGET_SWMUL"
   "@
     madd\t%1,%2
     madd\t%1,%2
@@ -1771,7 +1773,7 @@
 		 (match_operand:SI 3 "register_operand" "0,0,l,d")))
    (clobber (match_scratch:SI 4 "=X,X,3,l"))
    (clobber (match_scratch:SI 5 "=X,X,X,&d"))]
-  "TARGET_MIPS3900 && !TARGET_MIPS16"
+  "TARGET_MIPS3900 && !TARGET_MIPS16 && !TARGET_SWMUL"
   "@
     madd\t%1,%2
     madd\t%1,%2
@@ -1814,7 +1816,7 @@
 			  (match_operand:SI 2 "register_operand" "d,d"))
 		 (match_operand:SI 3 "register_operand" "0,l")))
    (clobber (match_scratch:SI 4 "=X,3"))]
-  "ISA_HAS_MACC"
+  "ISA_HAS_MACC && !TARGET_SWMUL"
 {
   if (which_alternative == 1)
     return "macc\t%0,%1,%2";
@@ -1836,7 +1838,7 @@
                   (mult:SI (match_operand:SI 2 "register_operand" "d,d")
                            (match_operand:SI 3 "register_operand" "d,d"))))
    (clobber (match_scratch:SI 4 "=X,1"))]
-  "ISA_HAS_MSAC"
+  "ISA_HAS_MSAC && !TARGET_SWMUL"
 {
   if (which_alternative == 1)
     return "msac\t%0,%2,%3";
@@ -1857,7 +1859,7 @@
                            (match_operand:SI 3 "register_operand" "d,d"))))
    (clobber (match_scratch:SI 4 "=X,1"))
    (clobber (match_scratch:SI 5 "=d,d"))]
-  "ISA_HAS_MACC && !ISA_HAS_MSAC"
+  "ISA_HAS_MACC && !ISA_HAS_MSAC && !TARGET_SWMUL"
   "#"
   "&& reload_completed"
   [(set (match_dup 5)
@@ -1884,7 +1886,7 @@
 	(plus:SI (mult:SI (match_dup 1)
 			  (match_dup 2))
 		 (match_dup 0)))]
-  "ISA_HAS_MACC && reload_completed"
+  "ISA_HAS_MACC && reload_completed && !TARGET_SWMUL"
   "macc\t%3,%1,%2"
   [(set_attr "type"	"imadd")
    (set_attr "accum_in"	"0")
@@ -1899,7 +1901,7 @@
 	(minus:SI (match_dup 0)
 		  (mult:SI (match_dup 1)
 			   (match_dup 2))))]
-  "ISA_HAS_MSAC && reload_completed"
+  "ISA_HAS_MSAC && reload_completed && !TARGET_SWMUL"
   "msac\t%3,%1,%2"
   [(set_attr "type"	"imadd")
    (set_attr "accum_in"	"0")
@@ -1947,7 +1949,7 @@
        [(set (match_operand:SI 3 "d_operand")
 	     (match_operand:SI 4 "macc_msac_operand"))
 	(clobber (match_dup 1))])]
-  "ISA_HAS_MUL3 && peep2_reg_dead_p (2, operands[1])"
+  "ISA_HAS_MUL3 && peep2_reg_dead_p (2, operands[1]) && !TARGET_SWMUL"
   [(parallel [(set (match_dup 0)
 		   (match_dup 5))
 	      (clobber (match_dup 1))])
@@ -1980,7 +1982,7 @@
    (match_dup 0)
    (set (match_operand:SI 4 "d_operand")
 	(match_dup 1))]
-  "ISA_HAS_MUL3 && peep2_reg_dead_p (3, operands[1])"
+  "ISA_HAS_MUL3 && peep2_reg_dead_p (3, operands[1]) && !TARGET_SWMUL"
   [(parallel [(set (match_dup 0)
 		   (match_dup 5))
 	      (clobber (match_dup 1))])
@@ -2000,7 +2002,7 @@
                            (match_operand:SI 3 "register_operand" "d,d,d"))))
    (clobber (match_scratch:SI 4 "=X,X,l"))
    (clobber (match_scratch:SI 5 "=X,X,&d"))]
-  "GENERATE_MADD_MSUB"
+  "GENERATE_MADD_MSUB && !TARGET_SWMUL"
   "@
    msub\t%2,%3
    msub\t%2,%3
@@ -2041,7 +2043,7 @@
         (neg:SI (mult:SI (match_operand:SI 1 "register_operand" "d,d")
                          (match_operand:SI 2 "register_operand" "d,d"))))
    (clobber (match_scratch:SI 3 "=X,l"))]
-  "ISA_HAS_MULS"
+  "ISA_HAS_MULS && !TARGET_SWMUL"
   "@
    muls\t$0,%1,%2
    muls\t%0,%1,%2"
@@ -2052,7 +2054,7 @@
   [(set (match_operand:DI 0 "register_operand")
 	(mult:DI (any_extend:DI (match_operand:SI 1 "register_operand"))
 		 (any_extend:DI (match_operand:SI 2 "register_operand"))))]
-  "mips_mulsidi3_gen_fn (<CODE>) != NULL"
+  "mips_mulsidi3_gen_fn (<CODE>) != NULL && !TARGET_SWMUL"
 {
   mulsidi3_gen_fn fn = mips_mulsidi3_gen_fn (<CODE>);
   emit_insn (fn (operands[0], operands[1], operands[2]));
@@ -2063,7 +2065,7 @@
   [(set (match_operand:DI 0 "register_operand")
 	(mult:DI (any_extend:DI (match_operand:SI 1 "register_operand"))
 		 (any_extend:DI (match_operand:SI 2 "register_operand"))))]
-  "!TARGET_64BIT && ISA_HAS_R6MUL"
+  "!TARGET_64BIT && ISA_HAS_R6MUL && !TARGET_SWMUL"
 {
   rtx dest = gen_reg_rtx (DImode);
   rtx low = mips_subword (dest, 0);
@@ -2081,7 +2083,7 @@
   [(set (match_operand:DI 0 "register_operand")
 	(mult:DI (any_extend:DI (match_operand:SI 1 "register_operand"))
 		 (any_extend:DI (match_operand:SI 2 "register_operand"))))]
-  "!TARGET_64BIT && TARGET_MIPS16"
+  "!TARGET_64BIT && TARGET_MIPS16 && !TARGET_SWMUL"
 {
   rtx hilo;
 
@@ -2098,7 +2100,7 @@
   [(set (match_operand:DI 0 "muldiv_target_operand" "=ka")
 	(mult:DI (any_extend:DI (match_operand:SI 1 "register_operand" "d"))
 		 (any_extend:DI (match_operand:SI 2 "register_operand" "d"))))]
-  "!TARGET_64BIT && (!TARGET_FIX_R4000 || ISA_HAS_DSP) && ISA_HAS_MULT"
+  "!TARGET_64BIT && (!TARGET_FIX_R4000 || ISA_HAS_DSP) && ISA_HAS_MULT && !TARGET_SWMUL"
 {
   if (ISA_HAS_DSP_MULT)
     return "mult<u>\t%q0,%1,%2";
@@ -2113,7 +2115,7 @@
 	(mult:DI (any_extend:DI (match_operand:SI 1 "register_operand" "d"))
 		 (any_extend:DI (match_operand:SI 2 "register_operand" "d"))))
    (clobber (match_scratch:DI 3 "=x"))]
-  "!TARGET_64BIT && TARGET_FIX_R4000 && !ISA_HAS_DSP && ISA_HAS_MULT"
+  "!TARGET_64BIT && TARGET_FIX_R4000 && !ISA_HAS_DSP && ISA_HAS_MULT && !TARGET_SWMUL"
   "mult<u>\t%1,%2\;mflo\t%L0\;mfhi\t%M0"
   [(set_attr "type" "imul")
    (set_attr "mode" "SI")
@@ -2126,7 +2128,7 @@
    (clobber (match_scratch:TI 3 "=x"))
    (clobber (match_scratch:DI 4 "=d"))]
   "TARGET_64BIT && !TARGET_FIX_R4000 && !ISA_HAS_DMUL3
-   && !TARGET_MIPS16 && ISA_HAS_MULT"
+   && !TARGET_MIPS16 && ISA_HAS_MULT && !TARGET_SWMUL"
   "#"
   "&& reload_completed"
   [(const_int 0)]
@@ -2146,7 +2148,7 @@
   [(set (match_operand:DI 0 "register_operand")
 	(mult:DI (any_extend:DI (match_operand:SI 1 "register_operand"))
 		 (any_extend:DI (match_operand:SI 2 "register_operand"))))]
-  "TARGET_64BIT && TARGET_MIPS16"
+  "TARGET_64BIT && TARGET_MIPS16 && !TARGET_SWMUL"
 {
   emit_insn (gen_<u>mulsidi3_64bit_split (operands[0], operands[1],
 					  operands[2], gen_reg_rtx (DImode)));
@@ -2193,7 +2195,7 @@
 	     (any_extend:DI (match_operand:SI 1 "register_operand" "d"))
 	     (any_extend:DI (match_operand:SI 2 "register_operand" "d")))]
 	  UNSPEC_SET_HILO))]
-  "TARGET_64BIT && !TARGET_FIX_R4000"
+  "TARGET_64BIT && !TARGET_FIX_R4000 && !TARGET_SWMUL"
   "mult<u>\t%1,%2"
   [(set_attr "type" "imul")
    (set_attr "mode" "SI")])
@@ -2204,7 +2206,7 @@
 	(mult:DI (sign_extend:DI (match_operand:SI 1 "register_operand" "d"))
 		 (sign_extend:DI (match_operand:SI 2 "register_operand" "d"))))
    (clobber (match_scratch:DI 3 "=l"))]
-  "ISA_HAS_DMUL3"
+  "ISA_HAS_DMUL3 && !TARGET_SWMUL"
   "dmul\t%0,%1,%2"
   [(set_attr "type" "imul3")
    (set_attr "mode" "DI")])
@@ -2213,7 +2215,7 @@
   [(set (match_operand:DI 0 "register_operand" "=d")
 	(mult:DI (sign_extend:DI (match_operand:SI 1 "register_operand" "d"))
 		 (sign_extend:DI (match_operand:SI 2 "register_operand" "d"))))]
-  "ISA_HAS_R6DMUL"
+  "ISA_HAS_R6DMUL && !TARGET_SWMUL"
   "dmul\t%0,%1,%2"
   [(set_attr "type" "imul3nc")
    (set_attr "mode" "DI")])
@@ -2225,7 +2227,7 @@
 	 (mult:DI
 	  (any_extend:DI (match_operand:SI 1 "register_operand" "d"))
 	  (any_extend:DI (match_operand:SI 2 "register_operand" "d")))))]
-  "!TARGET_64BIT && ISA_HAS_MULS"
+  "!TARGET_64BIT && ISA_HAS_MULS && !TARGET_SWMUL"
   "muls<u>\t$0,%1,%2"
   [(set_attr "type" "imul")
    (set_attr "mode" "SI")])
@@ -2244,7 +2246,7 @@
 	   (mult:DI
 	      (any_extend:DI (match_operand:SI 1 "register_operand" "d"))
 	      (any_extend:DI (match_operand:SI 2 "register_operand" "d")))))]
-  "!TARGET_64BIT && (ISA_HAS_MSAC || GENERATE_MADD_MSUB || ISA_HAS_DSP)"
+  "!TARGET_64BIT && (ISA_HAS_MSAC || GENERATE_MADD_MSUB || ISA_HAS_DSP) && !TARGET_SWMUL"
 {
   if (ISA_HAS_DSP_MULT)
     return "msub<u>\t%q0,%1,%2";
@@ -2266,7 +2268,7 @@
 	  (mult:DI (any_extend:DI (match_operand:SI 1 "register_operand"))
 		   (any_extend:DI (match_operand:SI 2 "register_operand")))
 	  (const_int 32))))]
-  ""
+  "!TARGET_SWMUL"
 {
   if (ISA_HAS_MULHI)
     emit_insn (gen_<su>mulsi3_highpart_mulhi_internal (operands[0],
@@ -2291,7 +2293,7 @@
 	  (mult:DI (any_extend:DI (match_operand:SI 1 "register_operand" "d"))
 		   (any_extend:DI (match_operand:SI 2 "register_operand" "d")))
 	  (const_int 32))))]
-  "ISA_HAS_R6MUL"
+  "ISA_HAS_R6MUL && !TARGET_SWMUL"
   "muh<u>\t%0,%1,%2"
   [(set_attr "type" "imul3nc")
    (set_attr "mode" "SI")])
@@ -2304,7 +2306,7 @@
 		   (any_extend:DI (match_operand:SI 2 "register_operand" "d")))
 	  (const_int 32))))
    (clobber (match_scratch:SI 3 "=l"))]
-  "ISA_HAS_MULT && !ISA_HAS_MULHI && !TARGET_MIPS16"
+  "ISA_HAS_MULT && !ISA_HAS_MULHI && !TARGET_MIPS16 && !TARGET_SWMUL"
   { return TARGET_FIX_R4000 ? "mult<u>\t%1,%2\n\tmfhi\t%0" : "#"; }
   "&& reload_completed && !TARGET_FIX_R4000"
   [(const_int 0)]
@@ -2324,7 +2326,7 @@
 	  (mult:DI (any_extend:DI (match_operand:SI 1 "register_operand"))
 		   (any_extend:DI (match_operand:SI 2 "register_operand")))
 	  (const_int 32))))]
-  ""
+  "!TARGET_SWMUL"
 {
   rtx hilo;
 
@@ -2352,7 +2354,7 @@
 	   (any_extend:DI (match_operand:SI 2 "register_operand" "d")))
 	  (const_int 32))))
    (clobber (match_scratch:SI 3 "=l"))]
-  "ISA_HAS_MULHI"
+  "ISA_HAS_MULHI && !TARGET_SWMUL"
   "mulhi<u>\t%0,%1,%2"
   [(set_attr "type" "imul3")
    (set_attr "mode" "SI")])
@@ -2367,7 +2369,7 @@
 	    (any_extend:DI (match_operand:SI 2 "register_operand" "d"))))
 	  (const_int 32))))
    (clobber (match_scratch:SI 3 "=l"))]
-  "ISA_HAS_MULHI"
+  "ISA_HAS_MULHI && !TARGET_SWMUL"
   "mulshi<u>\t%0,%1,%2"
   [(set_attr "type" "imul3")
    (set_attr "mode" "SI")])
@@ -2382,9 +2384,9 @@
 	  (mult:TI (any_extend:TI (match_operand:DI 1 "register_operand"))
 		   (any_extend:TI (match_operand:DI 2 "register_operand")))
 	  (const_int 64))))]
-  "ISA_HAS_R6DMUL
+  "(ISA_HAS_R6DMUL
    || (ISA_HAS_DMULT
-       && !(<CODE> == ZERO_EXTEND && TARGET_FIX_VR4120))"
+       && !(<CODE> == ZERO_EXTEND && TARGET_FIX_VR4120))) && !TARGET_SWMUL"
 {
   if (TARGET_MIPS16)
     emit_insn (gen_<su>muldi3_highpart_split (operands[0], operands[1],
@@ -2405,7 +2407,7 @@
 	  (mult:TI (any_extend:TI (match_operand:DI 1 "register_operand" "d"))
 		   (any_extend:TI (match_operand:DI 2 "register_operand" "d")))
 	  (const_int 64))))]
-  "ISA_HAS_R6DMUL"
+  "ISA_HAS_R6DMUL && !TARGET_SWMUL"
   "dmuh<u>\t%0,%1,%2"
   [(set_attr "type" "imul3nc")
    (set_attr "mode" "DI")])
@@ -2420,7 +2422,7 @@
    (clobber (match_scratch:DI 3 "=l"))]
   "ISA_HAS_DMULT
    && !TARGET_MIPS16
-   && !(<CODE> == ZERO_EXTEND && TARGET_FIX_VR4120)"
+   && !(<CODE> == ZERO_EXTEND && TARGET_FIX_VR4120) && !TARGET_SWMUL"
   { return TARGET_FIX_R4000 ? "dmult<u>\t%1,%2\n\tmfhi\t%0" : "#"; }
   "&& reload_completed && !TARGET_FIX_R4000"
   [(const_int 0)]
@@ -2454,7 +2456,7 @@
   [(set (match_operand:TI 0 "register_operand")
 	(mult:TI (any_extend:TI (match_operand:DI 1 "register_operand"))
 		 (any_extend:TI (match_operand:DI 2 "register_operand"))))]
-  "ISA_HAS_DMULT && !(<CODE> == ZERO_EXTEND && TARGET_FIX_VR4120)"
+  "ISA_HAS_DMULT && !(<CODE> == ZERO_EXTEND && TARGET_FIX_VR4120) && !TARGET_SWMUL"
 {
   rtx hilo;
 
@@ -2478,7 +2480,7 @@
 		 (any_extend:TI (match_operand:DI 2 "register_operand" "d"))))]
   "ISA_HAS_DMULT
    && !TARGET_FIX_R4000
-   && !(<CODE> == ZERO_EXTEND && TARGET_FIX_VR4120)"
+   && !(<CODE> == ZERO_EXTEND && TARGET_FIX_VR4120) && !TARGET_SWMUL"
   "dmult<u>\t%1,%2"
   [(set_attr "type" "imul")
    (set_attr "mode" "DI")])
@@ -2490,7 +2492,7 @@
    (clobber (match_scratch:TI 3 "=x"))]
   "ISA_HAS_DMULT
    && TARGET_FIX_R4000
-   && !(<CODE> == ZERO_EXTEND && TARGET_FIX_VR4120)"
+   && !(<CODE> == ZERO_EXTEND && TARGET_FIX_VR4120) && !TARGET_SWMUL"
   "dmult<u>\t%1,%2\;mflo\t%L0\;mfhi\t%M0"
   [(set_attr "type" "imul")
    (set_attr "mode" "DI")
@@ -2504,7 +2506,7 @@
 	(plus:SI (mult:SI (match_operand:SI 1 "register_operand" "d")
 			  (match_operand:SI 2 "register_operand" "d"))
 		 (match_dup 0)))]
-  "TARGET_MAD"
+  "TARGET_MAD && !TARGET_SWMUL"
   "mad\t%1,%2"
   [(set_attr "type"	"imadd")
    (set_attr "accum_in"	"0")
@@ -2519,7 +2521,7 @@
 		  (any_extend:DI (match_operand:SI 2 "register_operand" "d")))
 	 (match_operand:DI 3 "muldiv_target_operand" "0")))]
   "(TARGET_MAD || ISA_HAS_MACC || GENERATE_MADD_MSUB || ISA_HAS_DSP)
-   && !TARGET_64BIT"
+   && !TARGET_64BIT && !TARGET_SWMUL"
 {
   if (TARGET_MAD)
     return "mad<u>\t%1,%2";
@@ -2787,7 +2789,9 @@
 		  (match_operand:ANYF 2 "register_operand")))]
   "<divide_condition>"
 {
-  if (const_1_operand (operands[1], <MODE>mode))
+  if (NO_DIV)
+    FAIL;
+  else if (const_1_operand (operands[1], <MODE>mode))
     if (!(ISA_HAS_FP_RECIP_RSQRT (<MODE>mode)
 	  && flag_unsafe_math_optimizations))
       operands[1] = force_reg (<MODE>mode, operands[1]);
@@ -2851,7 +2855,7 @@
       (set (match_operand:GPR 3 "register_operand")
 	   (mod:GPR (match_dup 1)
 		    (match_dup 2)))])]
-  "ISA_HAS_<D>DIV && !TARGET_FIX_VR4120"
+  "ISA_HAS_<D>DIV && !TARGET_FIX_VR4120 && !NO_DIV"
 {
   if (TARGET_MIPS16)
     {
@@ -2869,7 +2873,7 @@
    (set (match_operand:GPR 3 "register_operand" "=d")
 	(mod:GPR (match_dup 1)
 		 (match_dup 2)))]
-  "ISA_HAS_<D>DIV && !TARGET_FIX_VR4120 && !TARGET_MIPS16"
+  "ISA_HAS_<D>DIV && !TARGET_FIX_VR4120 && !TARGET_MIPS16 && !NO_DIV"
   "#"
   "&& reload_completed"
   [(const_int 0)]
@@ -2895,7 +2899,7 @@
 	(mod:GPR (match_dup 1)
 		 (match_dup 2)))
    (clobber (match_operand:GPR 4 "lo_operand" "=l"))]
-  "ISA_HAS_<D>DIV && !TARGET_FIX_VR4120 && TARGET_MIPS16"
+  "ISA_HAS_<D>DIV && !TARGET_FIX_VR4120 && TARGET_MIPS16 && !NO_DIV"
   "#"
   "&& cse_not_expected"
   [(const_int 0)]
@@ -2916,7 +2920,7 @@
       (set (match_operand:GPR 3 "register_operand")
 	   (umod:GPR (match_dup 1)
 		     (match_dup 2)))])]
-  "ISA_HAS_<D>DIV && !TARGET_FIX_VR4120"
+  "ISA_HAS_<D>DIV && !TARGET_FIX_VR4120 && !NO_DIV"
 {
   if (TARGET_MIPS16)
     {
@@ -2934,7 +2938,7 @@
    (set (match_operand:GPR 3 "register_operand" "=d")
 	(umod:GPR (match_dup 1)
 		  (match_dup 2)))]
-  "ISA_HAS_<D>DIV && !TARGET_MIPS16"
+  "ISA_HAS_<D>DIV && !TARGET_MIPS16 && !NO_DIV"
   "#"
   "reload_completed"
   [(const_int 0)]
@@ -2955,7 +2959,7 @@
 	(umod:GPR (match_dup 1)
 		  (match_dup 2)))
    (clobber (match_operand:GPR 4 "lo_operand" "=l"))]
-  "ISA_HAS_<D>DIV && TARGET_MIPS16"
+  "ISA_HAS_<D>DIV && TARGET_MIPS16 && !NO_DIV"
   "#"
   "cse_not_expected"
   [(const_int 0)]
@@ -2972,7 +2976,7 @@
   [(set (match_operand:GPR 0 "register_operand")
 	(any_mod:GPR (match_operand:GPR 1 "register_operand")
 		     (match_operand:GPR 2 "register_operand")))]
-  ""
+  "!NO_DIV"
 {
   rtx hilo;
 
@@ -2999,7 +3003,7 @@
 	  [(any_div:GPR (match_operand:GPR 1 "register_operand" "d")
 			(match_operand:GPR 2 "register_operand" "d"))]
 	  UNSPEC_SET_HILO))]
-  "ISA_HAS_<GPR:D>DIV"
+  "ISA_HAS_<GPR:D>DIV && !NO_DIV"
   { return mips_output_division ("<GPR:d>div<u>\t%.,%1,%2", operands); }
   [(set_attr "type" "idiv")
    (set_attr "mode" "<GPR:MODE>")])
@@ -3010,7 +3014,7 @@
   [(set (match_operand:GPR 0 "register_operand" "=&d")
 	(any_div:GPR (match_operand:GPR 1 "register_operand" "d")
 		     (match_operand:GPR 2 "register_operand" "d")))]
-  "TARGET_LOONGSON_2EF || TARGET_LOONGSON_3A || ISA_HAS_R6<D>DIV"
+  "(TARGET_LOONGSON_2EF || TARGET_LOONGSON_3A || ISA_HAS_R6<D>DIV) && !NO_DIV"
   {
     if (TARGET_LOONGSON_2EF)
       return mips_output_division ("<d>div<u>.g\t%0,%1,%2", operands);
@@ -3026,7 +3030,7 @@
   [(set (match_operand:GPR 0 "register_operand" "=&d")
 	(any_mod:GPR (match_operand:GPR 1 "register_operand" "d")
 		     (match_operand:GPR 2 "register_operand" "d")))]
-  "TARGET_LOONGSON_2EF || TARGET_LOONGSON_3A || ISA_HAS_R6<D>DIV"
+  "(TARGET_LOONGSON_2EF || TARGET_LOONGSON_3A || ISA_HAS_R6<D>DIV) && !NO_DIV"
   {
     if (TARGET_LOONGSON_2EF)
       return mips_output_division ("<d>mod<u>.g\t%0,%1,%2", operands);
@@ -4267,7 +4271,7 @@
 			  (match_operand 1 "const_int_operand")
 			  (match_operand 2 "const_int_operand"))
 	(match_operand:GPR 3 "reg_or_0_operand"))]
-  "ISA_HAS_LWL_LWR"
+  "ISA_HAS_SWL_SWR"
 {
   if (mips_expand_ins_as_unaligned_store (operands[0], operands[3],
 					  INTVAL (operands[1]),
@@ -4339,7 +4343,7 @@
 	(unspec:GPR [(match_operand:BLK 1 "memory_operand" "m")
 		     (match_operand:QI 2 "memory_operand" "ZC")]
 		    UNSPEC_LOAD_LEFT))]
-  "!TARGET_MIPS16 && mips_mem_fits_mode_p (<MODE>mode, operands[1])"
+  "!TARGET_MIPS16 && mips_mem_fits_mode_p (<MODE>mode, operands[1]) && !NO_UNALIGNED_LOAD"
   "<load>l\t%0,%2"
   [(set_attr "move_type" "load")
    (set_attr "mode" "<MODE>")])
@@ -4350,7 +4354,7 @@
 		     (match_operand:QI 2 "memory_operand" "ZC")
 		     (match_operand:GPR 3 "register_operand" "0")]
 		    UNSPEC_LOAD_RIGHT))]
-  "!TARGET_MIPS16 && mips_mem_fits_mode_p (<MODE>mode, operands[1])"
+  "!TARGET_MIPS16 && mips_mem_fits_mode_p (<MODE>mode, operands[1]) && !NO_UNALIGNED_LOAD"
   "<load>r\t%0,%2"
   [(set_attr "move_type" "load")
    (set_attr "mode" "<MODE>")])
@@ -4360,7 +4364,7 @@
 	(unspec:BLK [(match_operand:GPR 1 "reg_or_0_operand" "dJ")
 		     (match_operand:QI 2 "memory_operand" "ZC")]
 		    UNSPEC_STORE_LEFT))]
-  "!TARGET_MIPS16 && mips_mem_fits_mode_p (<MODE>mode, operands[0])"
+  "!TARGET_MIPS16 && mips_mem_fits_mode_p (<MODE>mode, operands[0]) && !NO_UNALIGNED_STORE"
   "<store>l\t%z1,%2"
   [(set_attr "move_type" "store")
    (set_attr "mode" "<MODE>")])
@@ -4371,7 +4375,7 @@
 		     (match_operand:QI 2 "memory_operand" "ZC")
 		     (match_dup 0)]
 		    UNSPEC_STORE_RIGHT))]
-  "!TARGET_MIPS16 && mips_mem_fits_mode_p (<MODE>mode, operands[0])"
+  "!TARGET_MIPS16 && mips_mem_fits_mode_p (<MODE>mode, operands[0]) && !NO_UNALIGNED_STORE"
   "<store>r\t%z1,%2"
   [(set_attr "move_type" "store")
    (set_attr "mode" "<MODE>")])

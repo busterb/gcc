@@ -816,6 +816,15 @@ static const struct mips_rtx_cost_data
 		     1,           /* branch_cost */
 		     4            /* memory_latency */
   },
+  { /* F32C */
+    SOFT_FP_COSTS,
+    COSTS_N_INSNS (3),            /* int_mult_si */
+    COSTS_N_INSNS (3),            /* int_mult_di */
+    COSTS_N_INSNS (36),           /* int_div_si */
+    COSTS_N_INSNS (68),           /* int_div_di */
+		     1,           /* branch_cost */
+		     4            /* memory_latency */
+  },
   { /* Loongson-2E */
     DEFAULT_COSTS
   },
@@ -7979,7 +7988,7 @@ mips_block_move_straight (rtx dest, rtx src, HOST_WIDE_INT length)
      picking the minimum of alignment or BITS_PER_WORD gets us the
      desired size for bits.  */
 
-  if (!ISA_HAS_LWL_LWR)
+  if (!ISA_HAS_LWL_LWR || NO_UNALIGNED_LOAD || NO_UNALIGNED_STORE)
     bits = MIN (BITS_PER_WORD, MIN (MEM_ALIGN (src), MEM_ALIGN (dest)));
   else
     {
@@ -8110,7 +8119,7 @@ mips_block_move_loop (rtx dest, rtx src, HOST_WIDE_INT length,
 bool
 mips_expand_block_move (rtx dest, rtx src, rtx length)
 {
-  if (!ISA_HAS_LWL_LWR
+  if ((!ISA_HAS_LWL_LWR || NO_UNALIGNED_LOAD || NO_UNALIGNED_STORE)
       && (MEM_ALIGN (src) < MIPS_MIN_MOVE_MEM_ALIGN
 	  || MEM_ALIGN (dest) < MIPS_MIN_MOVE_MEM_ALIGN))
     return false;

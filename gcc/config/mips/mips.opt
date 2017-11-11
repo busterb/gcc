@@ -115,6 +115,26 @@ mdouble-float
 Target Report RejectNegative InverseMask(SINGLE_FLOAT, DOUBLE_FLOAT)
 Allow hardware floating-point instructions to cover both 32-bit and 64-bit operations.
 
+mno-mul
+Target Report RejectNegative Var(TARGET_SWMUL)
+Do not use integer mul instructions
+
+mno-div
+Target Report RejectNegative Var(TARGET_SWDIV)
+Do not use integer div instructions
+
+mno-sign-extend
+Target Report RejectNegative Var(TARGET_NO_SEB_SEH)
+Do not use sign extend instructions
+
+mno-unaligned-load
+Target Report RejectNegative Var(TARGET_NO_UNALIGNED_LOAD)
+Do not emit unaligned load instructions
+
+mno-unaligned-store
+Target Report RejectNegative Var(TARGET_NO_UNALIGNED_STORE)
+Do not emit unaligned store instructions
+
 mdsp
 Target Report Var(TARGET_DSP)
 Use MIPS-DSP instructions.

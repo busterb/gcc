@@ -267,6 +267,7 @@ struct mips_cpu_info {
 #define TARGET_LOONGSON_2F          (mips_arch == PROCESSOR_LOONGSON_2F)
 #define TARGET_LOONGSON_2EF         (TARGET_LOONGSON_2E || TARGET_LOONGSON_2F)
 #define TARGET_LOONGSON_3A          (mips_arch == PROCESSOR_LOONGSON_3A)
+#define TARGET_F32C                 (mips_arch == PROCESSOR_F32C)
 #define TARGET_MIPS3900             (mips_arch == PROCESSOR_R3900)
 #define TARGET_MIPS4000             (mips_arch == PROCESSOR_R4000)
 #define TARGET_MIPS4120             (mips_arch == PROCESSOR_R4120)
@@ -299,6 +300,7 @@ struct mips_cpu_info {
 #define TUNE_LOONGSON_2EF           (mips_tune == PROCESSOR_LOONGSON_2E	\
 				     || mips_tune == PROCESSOR_LOONGSON_2F)
 #define TUNE_LOONGSON_3A            (mips_tune == PROCESSOR_LOONGSON_3A)
+#define TUNE_F32C                   (mips_tune == PROCESSOR_F32C)
 #define TUNE_MIPS3000               (mips_tune == PROCESSOR_R3000)
 #define TUNE_MIPS3900               (mips_tune == PROCESSOR_R3900)
 #define TUNE_MIPS4000               (mips_tune == PROCESSOR_R4000)
@@ -369,8 +371,10 @@ struct mips_cpu_info {
    directly accessible, while the command-line options select
    TARGET_HARD_FLOAT_ABI and TARGET_SOFT_FLOAT_ABI to reflect the ABI
    in use.  */
-#define TARGET_HARD_FLOAT (TARGET_HARD_FLOAT_ABI && !TARGET_MIPS16)
-#define TARGET_SOFT_FLOAT (TARGET_SOFT_FLOAT_ABI || TARGET_MIPS16)
+#define TARGET_HARD_FLOAT \
+    (TARGET_HARD_FLOAT_ABI && !TARGET_MIPS16 && !TARGET_F32C)
+#define TARGET_SOFT_FLOAT \
+    (TARGET_SOFT_FLOAT_ABI || TARGET_MIPS16 || TARGET_F32C)
 
 /* TARGET_FLOAT64 represents -mfp64 and TARGET_FLOATXX represents
    -mfpxx, derive TARGET_FLOAT32 to represent -mfp32.  */
@@ -772,7 +776,7 @@ struct mips_cpu_info {
        |march=r10000|march=r12000|march=r14000|march=r16000:-mips4} \
      %{march=mips32|march=4kc|march=4km|march=4kp|march=4ksc:-mips32} \
      %{march=mips32r2|march=m4k|march=4ke*|march=4ksd|march=24k* \
-       |march=34k*|march=74k*|march=m14k*|march=1004k* \
+       |march=34k*|march=74k*|march=m14k*|march=1004k*|march=f32c \
        |march=interaptiv: -mips32r2} \
      %{march=mips32r3: -mips32r3} \
      %{march=mips32r5|march=p5600|march=m5100|march=m5101: -mips32r5} \
@@ -797,7 +801,7 @@ struct mips_cpu_info {
 
 #define MIPS_ARCH_FLOAT_SPEC \
   "%{mhard-float|msoft-float|mno-float|march=mips*:; \
-     march=vr41*|march=m4k|march=4k*|march=24kc|march=24kec \
+     march=f32c|march=vr41*|march=m4k|march=4k*|march=24kc|march=24kec \
      |march=34kc|march=34kn|march=74kc|march=1004kc|march=5kc \
      |march=m14k*|march=m5101|march=octeon|march=xlr: -msoft-float; \
      march=*: -mhard-float}"
@@ -933,6 +937,11 @@ struct mips_cpu_info {
    been generated up to this point.  */
 #define ISA_HAS_BRANCHLIKELY	(!ISA_MIPS1 && mips_isa_rev <= 5)
 
+/* F32C hacks */
+#define NO_DIV (TARGET_SWDIV || TARGET_F32C)
+#define NO_UNALIGNED_LOAD (TARGET_NO_UNALIGNED_LOAD || TARGET_F32C)
+#define NO_UNALIGNED_STORE (TARGET_NO_UNALIGNED_STORE || TARGET_F32C)
+
 /* ISA has 32 single-precision registers.  */
 #define ISA_HAS_ODD_SPREG	((mips_isa_rev >= 1			\
 				  && !TARGET_LOONGSON_3A)		\
@@ -949,7 +958,7 @@ struct mips_cpu_info {
 				  || TARGET_MAD				\
 				  || (mips_isa_rev >= 1			\
 				      && mips_isa_rev <= 5))		\
-				 && !TARGET_MIPS16)
+				 && !TARGET_MIPS16 && !TARGET_F32C)
 
 /* ISA has a three-operand multiplication instruction.  */
 #define ISA_HAS_DMUL3		(TARGET_64BIT				\
@@ -1009,9 +1018,10 @@ struct mips_cpu_info {
 
 /* ISA has the integer conditional move instructions introduced in mips4 and
    ST Loongson 2E/2F.  */
-#define ISA_HAS_CONDMOVE        (ISA_HAS_FP_CONDMOVE			\
+#define ISA_HAS_CONDMOVE        ((ISA_HAS_FP_CONDMOVE			\
 				 || TARGET_MIPS5900			\
-				 || TARGET_LOONGSON_2EF)
+				 || TARGET_LOONGSON_2EF)		\
+				 && !TARGET_F32C)
 
 /* ISA has LDC1 and SDC1.  */
 #define ISA_HAS_LDC1_SDC1	(!ISA_MIPS1				\
@@ -1053,16 +1063,16 @@ struct mips_cpu_info {
 
 /* ISA has conditional trap instructions.  */
 #define ISA_HAS_COND_TRAP	(!ISA_MIPS1				\
-				 && !TARGET_MIPS16)
+				 && !TARGET_MIPS16 && !TARGET_F32C)
 
 /* ISA has conditional trap with immediate instructions.  */
 #define ISA_HAS_COND_TRAPI	(!ISA_MIPS1				\
 				 && mips_isa_rev <= 5			\
-				 && !TARGET_MIPS16)
+				 && !TARGET_MIPS16 && !TARGET_F32C)
 
 /* ISA has integer multiply-accumulate instructions, madd and msub.  */
 #define ISA_HAS_MADD_MSUB	(mips_isa_rev >= 1			\
-				 && mips_isa_rev <= 5)
+				 && mips_isa_rev <= 5 && !TARGET_F32C)
 
 /* Integer multiply-accumulate instructions should be generated.  */
 #define GENERATE_MADD_MSUB	(TARGET_IMADD && !TARGET_MIPS16)
@@ -1105,14 +1115,18 @@ struct mips_cpu_info {
 				      && (MODE) == V2SFmode))		\
 				 && !TARGET_MIPS16)
 
-#define ISA_HAS_LWL_LWR		(mips_isa_rev <= 5 && !TARGET_MIPS16)
+#define ISA_HAS_LWL_LWR		(mips_isa_rev <= 5 && !TARGET_MIPS16 && \
+				 !NO_UNALIGNED_LOAD)
+#define ISA_HAS_SWL_SWR		(mips_isa_rev <= 5 && !TARGET_MIPS16 && \
+				 !NO_UNALIGNED_STORE)
 
 #define ISA_HAS_IEEE_754_LEGACY	(mips_isa_rev <= 5)
 
 #define ISA_HAS_IEEE_754_2008	(mips_isa_rev >= 2)
 
-/* ISA has count leading zeroes/ones instruction (not implemented).  */
-#define ISA_HAS_CLZ_CLO		(mips_isa_rev >= 1 && !TARGET_MIPS16)
+/* ISA has count leading zeroes/ones instruction (not implemented). */
+#define ISA_HAS_CLZ_CLO		(mips_isa_rev >= 1 && !TARGET_MIPS16 && \
+				 !TARGET_F32C)
 
 /* ISA has three operand multiply instructions that put
    the high part in an accumulator: mulhi or mulhiu.  */
@@ -1155,18 +1169,19 @@ struct mips_cpu_info {
 				  || TARGET_MIPS5500			\
 				  || TARGET_SR71K			\
 				  || TARGET_SMARTMIPS)			\
-				 && !TARGET_MIPS16)
+				 && !TARGET_MIPS16 && !TARGET_F32C)
 
 /* ISA has the WSBH (word swap bytes within halfwords) instruction.
    64-bit targets also provide DSBH and DSHD.  */
-#define ISA_HAS_WSBH		(mips_isa_rev >= 2 && !TARGET_MIPS16)
+#define ISA_HAS_WSBH		(mips_isa_rev >= 2 && !TARGET_MIPS16 && \
+				 !TARGET_F32C)
 
 /* ISA has data prefetch instructions.  This controls use of 'pref'.  */
 #define ISA_HAS_PREFETCH	((ISA_MIPS4				\
 				  || TARGET_LOONGSON_2EF		\
 				  || TARGET_MIPS5900			\
 				  || mips_isa_rev >= 1)			\
-				 && !TARGET_MIPS16)
+				 && !TARGET_MIPS16 && !TARGET_F32C)
 
 /* ISA has data prefetch, LL and SC with limited 9-bit displacement.  */
 #define ISA_HAS_9BIT_DISPLACEMENT	(mips_isa_rev >= 6)
@@ -1183,10 +1198,12 @@ struct mips_cpu_info {
 #define ISA_HAS_TRUNC_W		(!ISA_MIPS1)
 
 /* ISA includes the MIPS32r2 seb and seh instructions.  */
-#define ISA_HAS_SEB_SEH		(mips_isa_rev >= 2 && !TARGET_MIPS16)
+#define ISA_HAS_SEB_SEH		(mips_isa_rev >= 2 && !TARGET_MIPS16 && \
+				 !TARGET_NO_SEB_SEH)
 
 /* ISA includes the MIPS32/64 rev 2 ext and ins instructions.  */
-#define ISA_HAS_EXT_INS		(mips_isa_rev >= 2 && !TARGET_MIPS16)
+#define ISA_HAS_EXT_INS		(mips_isa_rev >= 2 && !TARGET_MIPS16 && \
+				 !TARGET_F32C)
 
 /* ISA has instructions for accessing top part of 64-bit fp regs.  */
 #define ISA_HAS_MXHC1		(!TARGET_FLOAT32	\
@@ -1207,10 +1224,12 @@ struct mips_cpu_info {
 				 && TARGET_64BIT)
 
 /* The DSP ASE is available.  */
-#define ISA_HAS_DSP		(TARGET_DSP && !TARGET_MIPS16)
+#define ISA_HAS_DSP		(TARGET_DSP && !TARGET_MIPS16 && \
+				 !TARGET_F32C)
 
 /* Revision 2 of the DSP ASE is available.  */
-#define ISA_HAS_DSPR2		(TARGET_DSPR2 && !TARGET_MIPS16)
+#define ISA_HAS_DSPR2		(TARGET_DSPR2 && !TARGET_MIPS16 && \
+				 !TARGET_F32C)
 
 /* The MSA ASE is available.  */
 #define ISA_HAS_MSA		(TARGET_MSA && !TARGET_MIPS16)
@@ -1252,10 +1271,11 @@ struct mips_cpu_info {
 				 || TARGET_LOONGSON_2EF)
 
 /* ISA includes synci, jr.hb and jalr.hb.  */
-#define ISA_HAS_SYNCI (mips_isa_rev >= 2 && !TARGET_MIPS16)
+#define ISA_HAS_SYNCI (mips_isa_rev >= 2 && !TARGET_MIPS16 && !TARGET_F32C)
 
 /* ISA includes sync.  */
-#define ISA_HAS_SYNC ((mips_isa >= 2 || TARGET_MIPS3900) && !TARGET_MIPS16)
+#define ISA_HAS_SYNC ((mips_isa >= 2 || TARGET_MIPS3900) && !TARGET_MIPS16 \
+		      && !TARGET_F32C)
 #define GENERATE_SYNC			\
   (target_flags_explicit & MASK_LLSC	\
    ? TARGET_LLSC && !TARGET_MIPS16	\
